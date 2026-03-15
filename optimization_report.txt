@@ -1,0 +1,66 @@
+============================================================
+OPTIMIZATION REPORT
+============================================================
+
+Query: Simple join
+SQL: SELECT u.name, o.total FROM users u JOIN orders o ON u.id = o.user_id
+Estimated cost: 12 (lower is better)
+Plan steps:
+  - SCAN o
+  - SEARCH u USING INTEGER PRIMARY KEY (rowid=?)
+Suggestions:
+  * Full table SCAN detected. Consider adding an INDEX on filtered/joined columns.
+
+Query: Join with aggregation
+SQL: SELECT u.name, COUNT(o.id) as order_count FROM users u LEFT JOIN orders o ON u.i...
+Estimated cost: 12 (lower is better)
+Plan steps:
+  - SCAN u
+  - SEARCH o USING COVERING INDEX idx_orders_user_id (user_id=?) LEFT-JOIN
+
+Query: Three-table join
+SQL: SELECT u.name, p.name, oi.quantity FROM users u JOIN orders o ON u.id = o.user_i...
+Estimated cost: 16 (lower is better)
+Plan steps:
+  - SCAN oi
+  - SEARCH o USING INTEGER PRIMARY KEY (rowid=?)
+  - SEARCH u USING INTEGER PRIMARY KEY (rowid=?)
+  - SEARCH p USING INTEGER PRIMARY KEY (rowid=?)
+Suggestions:
+  * Full table SCAN detected. Consider adding an INDEX on filtered/joined columns.
+
+Query: Aggregation only
+SQL: SELECT category, COUNT(*) as count, AVG(price) as avg_price FROM products GROUP ...
+Estimated cost: 11 (lower is better)
+Plan steps:
+  - SCAN products
+  - USE TEMP B-TREE FOR GROUP BY
+Suggestions:
+  * Full table SCAN detected. Consider adding an INDEX on filtered/joined columns.
+
+Query: Subquery (IN)
+SQL: SELECT * FROM orders WHERE user_id IN (SELECT id FROM users WHERE name LIKE 'A%'...
+Estimated cost: 18 (lower is better)
+Plan steps:
+  - SEARCH orders USING INDEX idx_orders_user_id (user_id=?)
+  - LIST SUBQUERY 1
+  - SCAN users
+  - CREATE BLOOM FILTER
+Suggestions:
+  * Using IN (subquery) can be slow. Try rewriting with JOIN.
+
+Query: Same with JOIN
+SQL: SELECT o.* FROM orders o JOIN users u ON o.user_id = u.id WHERE u.name LIKE 'A%'
+Estimated cost: 12 (lower is better)
+Plan steps:
+  - SCAN o
+  - SEARCH u USING INTEGER PRIMARY KEY (rowid=?)
+Suggestions:
+  * Full table SCAN detected. Consider adding an INDEX on filtered/joined columns.
+
+--- Comparison (subquery vs JOIN) ---
+Subquery (IN) cost: 18
+JOIN version cost: 12
+Recommendation: Prefer the JOIN version for better performance.
+
+============================================================
